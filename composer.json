@@ -1,0 +1,31 @@
+{
+    "name": "liuwanwei/yii2-common",
+    "description": "common tools used for yii2 projects.",
+    "type": "library",
+    "require": {
+        "yiisoft/yii2": ">=2.0.44"
+    },
+    "license": "BSD License",
+    "autoload": {
+        "psr-4": {
+            "bytefly\\yii2common\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "liuwanwei",
+            "email": "liuwanwei@gmail.com"
+        }
+    ],
+    "repositories": {
+        "0": {
+            "type": "composer",
+            "url": "https://asset-packagist.cn"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "yiisoft/yii2-composer": true
+        }
+    }
+}
