@@ -21,13 +21,7 @@ use Yii;
  * - 查询比赛详情接口缓存的数据需要更新 fe:/kmatch/result
  */
 class GrandCache extends \yii\base\Component{    
-
-    const EntryGame = 'game';
-    const EntryTour = 'tour';
-    const EntryPlayer = 'player';
-    const EntryTeam = 'team';
-
-    /** @var string 子类必须定义，否则抛出异常；一般有 'tour', 'team', 'player', 'game' */
+    /** @var string 子类必须定义，否则抛出异常；比如 'tour', 'team', 'player', 'game' */
     public $objectEntryName = null;
 
     /** @var CacheEntry */
@@ -37,8 +31,12 @@ class GrandCache extends \yii\base\Component{
     private static $_Defaults = [];
 
     public static function default() : GrandCache
-    {
-        $calledClass = get_called_class();        
+    {        
+        $calledClass = get_called_class();
+        if (str_contains($calledClass, GrandCache::class)){
+            throw new ErrorException('必须重载当前类，再调用: ' . __FUNCTION__);
+        }
+
         $instance = static::$_Defaults[$calledClass] ?? null;
         if ($instance == null){
             $instance = new $calledClass;
@@ -46,10 +44,6 @@ class GrandCache extends \yii\base\Component{
         }
 
         return $instance;
-    }
-
-    public function __construct()
-    {
     }
 
     /**
@@ -116,12 +110,22 @@ class GrandCache extends \yii\base\Component{
         return static::default()->getCachedData($objectId, $category, $callable);
     }
 
-    public static function setData(string $category, $value){
-        throw new ErrorException('派生类必须重载: ' . __FUNCTION__);
-    }
+    /** 直接写入一个值到缓存 */
+    public static function setData($objectId, string $category, $value){        
+        $instance = static::default();
 
-    public static function clearData($objectId, string $category){
-        throw new ErrorException('派生类必须重载: ' . __FUNCTION__);
+        $cache = CommonHelper::memcache();
+        if($cache){
+            $key = $instance->getEntry()->makeCacheKey($objectId, $category);
+            if ($value == null){
+                $cache->delete($key);
+            }else{
+                $cache->set($key, $value);
+            }
+
+        }else{
+            throw new ErrorException('没有找到 memcache 组件，无法设置');
+        }
     }
 
     /** 上面的代码都是在创建和维护缓存，下面的函数接口，是当当外部事件发生后调用，自动清除对应的缓存数据 */
@@ -129,49 +133,19 @@ class GrandCache extends \yii\base\Component{
     /**
      * 清除 memcache 缓存的入口（之一，随需扩展）
      *
-     * @param array $param 当相关对象被修改时，指定相关需要更新的目标缓存，目前支持 tourId, teamId, playerId, gameId 属性，支持逗号分隔的多个 ID
+     * @param mixed $param 当相关对象被修改时，指定相关需要更新的目标缓存 ID，目前支持 tourId, teamId, playerId, gameId 属性，支持逗号分隔的多个 ID
      * 
      * @return void
      */
-    public static function onUpdate(array $param){
+    public static function onUpdate($param){
         if(Yii::$app->cache == null){
             return;
         }
 
-        // 删除跟赛事关联的数据
-        if(! empty($param['tourId'])){
-            $default = TourCache::default();
-            $array = self::getArray($param['tourId']);
-            foreach($array as $tourId){
-                $default->getEntry('tour')->deleteDependingdKeys($tourId);
-            }            
-        }
-
-        // 删除跟比赛关联的缓存
-        if (! empty($param['gameId'])) {
-            $default = GameCache::default();
-            $array = self::getArray($param['gameId']);
-            foreach ($array as $gameId) {
-                $default->getEntry('game')->deleteDependingdKeys($gameId);
-            }            
-        }
-
-        // 删除跟球队关联的缓存
-        if (! empty($param['teamId'])){
-            $default = TeamCache::default();
-            $array = self::getArray($param['teamId']);
-            foreach ($array as $teamId) {
-                $default->getEntry('team')->deleteDependingdKeys($teamId);
-            }
-        }
-
-        // 删除跟球员关联的缓存
-        if (! empty($param['playerId'])) {
-            $default = PlayerCache::default();
-            $array = self::getArray($param['playerId']);
-            foreach ($array as $playerId) {
-                $default->getEntry('player')->deleteDependingdKeys($playerId);
-            }
+        $default = static::default();
+        $array = self::getArray($param);
+        foreach($array as $objectId){
+            $default->getEntry()->deleteDependingdKeys($objectId);
         }
     }
 
