@@ -1,5 +1,5 @@
 {
-    "name": "liuwanwei/yii2-common",
+    "name": "bytefly/yii2common",
     "description": "common tools used for yii2 projects.",
     "type": "library",
     "require": {
