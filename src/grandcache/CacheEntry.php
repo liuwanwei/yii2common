@@ -1,5 +1,5 @@
 <?php
-namespace common\models\cache;
+namespace bytefly\yii2common\grandcache;
 
 use Yii;
 
