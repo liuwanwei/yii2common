@@ -46,6 +46,11 @@ class GrandCache extends \yii\base\Component{
         return $instance;
     }
 
+    /** 放入缓存前可以将对象或对象数组序列化成字符串数组 */
+    public static function serialize($data){
+        return Yii::createObject('yii\rest\Serializer')->serialize($data);
+    }
+
     /**
      * 获取对应的缓存管理入口对象
      * 
