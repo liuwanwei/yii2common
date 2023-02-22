@@ -85,7 +85,8 @@ class GrandCache extends \yii\base\Component{
      * @return mixed 由 $callable 定义
      */
     protected function getCachedData($objectId, $category, callable $callable){
-        if (Yii::$app->params['useGrandCache'] !== true){
+        $enabled = Yii::$app->params['useGrandCache'] ?? false;
+        if ($enabled !== true){
             // 通过配置参数控制缓存是否生效，测试时使用
             return call_user_func($callable);
         }        

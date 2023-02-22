@@ -23,7 +23,16 @@
 
 ## 使用
 
-首先派生自己的缓存管理对象。
+切记：在应用的入口处初始化缓存区域总入口，如果不初始化，它的初始值就是 `mf`。
+多个项目共享同一个 memcache 服务时，使用前必须初始化，否则很容易产生冲突。
+
+```PHP
+public function beforeAction(){
+    \bytefly\yii2common\grandcache\CacheEntry::$zone = 'my-project1';
+}
+```
+
+然后派生自己的缓存管理对象。
 
 ```PHP
 class MyObjectCache extends \bytefly\yii2common\grandcache{
@@ -45,11 +54,8 @@ public function queryObjects($objectId){
 }
 ```
 
-最后不要忘记在应用的入口处初始化缓存区域总入口，如果不初始化，它的初始值就是 `mf`。
-多个项目共享同一个 memcache 服务时，使用前必须初始化，否则很容易产生冲突。
+如果想临时关闭缓存功能，可以设置 `Yii::$app->params`:
 
 ```PHP
-public function beforeAction(){
-    \bytefly\yii2common\grandcache\CacheEntry::$zone = 'my-project1';
-}
+Yii::$app->params['useGrandCache'] = false;
 ```
